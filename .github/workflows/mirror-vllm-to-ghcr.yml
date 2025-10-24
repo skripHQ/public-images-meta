@@ -42,17 +42,20 @@ jobs:
       - name: Login to GHCR with GITHUB_TOKEN
         run: echo "${{ secrets.GITHUB_TOKEN }}" | skopeo login ghcr.io -u "${{ github.actor }}" --password-stdin
 
-      - name: Copy Docker Hub -> GHCR (all platforms)
+      - name: Copy Docker Hub -> GHCR (amd64 only)
         env:
           SRC: docker://docker.io/vllm/vllm-openai:${{ inputs.version }}
-          DST: docker://ghcr.io/${{ env.GHCR_OWNER }}/vllm-openai:${{ inputs.version }}
+          DST: docker://ghcr.io/${{ env.GHCR_OWNER }}/vllm-openai:${{ inputs.version }}-amd64
         run: |
-          skopeo copy --all "$SRC" "$DST"
+          skopeo copy \
+            --override-os linux \
+            --override-arch amd64 \
+            "$SRC" "$DST"
 
-      - name: Show GHCR digest to pin in prod
+      - name: Show GHCR digest to pin in prod (amd64)
         env:
-          REF: docker://ghcr.io/${{ env.GHCR_OWNER }}/vllm-openai:${{ inputs.version }}
+          REF: docker://ghcr.io/${{ env.GHCR_OWNER }}/vllm-openai:${{ inputs.version }}-amd64
         run: |
           DIGEST=$(skopeo inspect "$REF" --format '{{.Digest}}')
-          echo "GHCR digest: $DIGEST"
-          echo "Use this in production: ghcr.io/${{ env.GHCR_OWNER }}/vllm-openai@${DIGEST}" 
+          echo "GHCR digest (amd64): $DIGEST"
+          echo "Use in prod: ghcr.io/${{ env.GHCR_OWNER }}/vllm-openai@${DIGEST}"
