@@ -23,13 +23,16 @@ permissions:
   contents: read
   packages: write
 
+env:
+  GHCR_OWNER: skriphq
+
 jobs:
   mirror:
     runs-on: ubuntu-latest
 
     steps:
       - name: Show inputs
-        run: echo "Mirroring vllm/vllm-openai:${{ inputs.version }} -> ghcr.io/${{ github.repository_owner }}/vllm-openai:${{ inputs.version }}"
+        run: echo "Mirroring vllm/vllm-openai:${{ inputs.version }} -> ghcr.io/${{ env.GHCR_OWNER }}/vllm-openai:${{ inputs.version }}"
 
       - name: Install skopeo
         run: |
@@ -42,14 +45,14 @@ jobs:
       - name: Copy Docker Hub -> GHCR (all platforms)
         env:
           SRC: docker://docker.io/vllm/vllm-openai:${{ inputs.version }}
-          DST: docker://ghcr.io/${{ github.repository_owner }}/vllm-openai:${{ inputs.version }}
+          DST: docker://ghcr.io/${{ env.GHCR_OWNER }}/vllm-openai:${{ inputs.version }}
         run: |
           skopeo copy --all "$SRC" "$DST"
 
       - name: Show GHCR digest to pin in prod
         env:
-          REF: docker://ghcr.io/${{ github.repository_owner }}/vllm-openai:${{ inputs.version }}
+          REF: docker://ghcr.io/${{ env.GHCR_OWNER }}/vllm-openai:${{ inputs.version }}
         run: |
           DIGEST=$(skopeo inspect "$REF" --format '{{.Digest}}')
           echo "GHCR digest: $DIGEST"
-          echo "Use this in production: ghcr.io/${{ github.repository_owner }}/vllm-openai@${DIGEST}" 
+          echo "Use this in production: ghcr.io/${{ env.GHCR_OWNER }}/vllm-openai@${DIGEST}" 
